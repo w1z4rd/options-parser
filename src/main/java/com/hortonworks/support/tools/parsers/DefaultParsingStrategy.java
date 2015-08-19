@@ -18,10 +18,6 @@
 
 package com.hortonworks.support.tools.parsers;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.StringTokenizer;
 
 import com.hortonworks.support.tools.utils.KeyValuePair;
@@ -30,36 +26,32 @@ import com.hortonworks.support.tools.utils.KeyValuePair;
  * @author costelradulescu
  *
  */
-public final class JavaOptionsParser {
+class DefaultParsingStrategy implements ParsingStrategy {
+  private static final String EQUALS = "=";
+  private static final String COLON = ":";
 
-  private JavaOptionsParser() {
-
-  }
-
-  public static Map<String, String> parse(String input) {
-    if (input == null || input.isEmpty()) {
-      return new HashMap<String, String>();
+  @Override
+  public KeyValuePair<String, String> parse(String property) {
+    KeyValuePair<String, String> result = new KeyValuePair<String, String>();
+    StringTokenizer tokenizer = new StringTokenizer(property, getDelimiter(property));
+    if (tokenizer.hasMoreTokens()) {
+      result.setKey(tokenizer.nextToken());
     }
-    StringTokenizer tokenizer = new StringTokenizer(input);
-    List<String> tokens = new ArrayList<String>();
+    StringBuilder sb = new StringBuilder();
     while (tokenizer.hasMoreTokens()) {
-      tokens.add(tokenizer.nextToken());
+      sb.append(tokenizer.nextToken());
     }
-    return parse(tokens);
-  }
-
-  public static Map<String, String> parse(List<String> input) {
-    if (input == null || input.isEmpty()) {
-      return new HashMap<String, String>();
-    }
-    Map<String, String> result = new HashMap<String, String>();
-    for (String property : input) {
-      PropertyParsingStrategy strategy = PropertyParsingStrategy.fromString(property);
-      ParsingStrategy parsingStrategy = strategy.getParsingStrategy();
-      KeyValuePair<String, String> entry = parsingStrategy.parse(property);
-      result.put(entry.getKey(), entry.getValue());
-    }
+    result.setValue(sb.length() == 0 ? null : sb.toString());
     return result;
   }
 
+  private String getDelimiter(String input) {
+    if (!input.contains(EQUALS)) {
+      return COLON;
+    }
+    if (!input.contains(COLON)) {
+      return EQUALS;
+    }
+    return input.indexOf(EQUALS) < input.indexOf(COLON) ? EQUALS : COLON;
+  }
 }
